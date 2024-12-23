@@ -13,6 +13,6 @@ export const verifyToken = (req, res, next) => {
         next();
     }catch(error){
         console.log("error in verifyToken ", error);
-        res.status(401).json({success:false, message:"Unauthorized-token verification failed"});
+        res.status(500).json({success:false, message:"Unauthorized-token verification failed"});
     }
 };

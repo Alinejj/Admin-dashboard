@@ -1,35 +1,110 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import FloatingShapes from "./components/FloatingShapes";
+import { Routes, Route, Navigate } from 'react-router-dom';
+import SignUpPage from './pages/SignUpPage';
+import LoginPage from './pages/LoginPage';
+import EmailVerificationPage from './pages/EmailVerificationPage';
+import DashBoardPage from './pages/DashBoardPage';
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import {Toaster} from 'react-hot-toast';
+import { useAuthStore } from "./store/authStore";
+import { useEffect } from "react";
+import LoadingSpinner from "./components/LoadingSpinner";
+
+
+//protect routes that requiew authrmetaction
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, user } = useAuthStore();
+
+  // Show a loading state or navigate away while checking authentication
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!user.isVerified) {
+    return <Navigate to="/verify-email" replace />;
+  }
+
+  return children; // Render protected content if authenticated and verified
+};
+
+//redirect authenticated users to home page
+const RedirectAuthenticatedUser = ({ children }) => {
+	const { isAuthenticated, user } = useAuthStore();
+
+	if (isAuthenticated && user.isVerified) {
+		return <Navigate to='/' replace />;
+	}
+
+	return children;
+};
+
 
 function App() {
-  const [count, setCount] = useState(0)
+  const {isCheckingAuth, checkAuth} = useAuthStore();
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+  useEffect( () => {
+    checkAuth();
+  }, [checkAuth]);
+
+ if(isCheckingAuth) return <LoadingSpinner />;
+
+ return (
+  <div className='min-h-screen bg-gradient-to-br from-gray-900 via-pink-800 to-pink-300 flex items-center justify-center relative overflow-hidden'>
+    <FloatingShapes color='bg-pink-500' size='w-64 h-64' top='-5%' left='10%' delay={0} />
+    <FloatingShapes color='bg-orchid-500' size='w-48 h-48' top='70%' left='80%' delay={5} />
+    <FloatingShapes color='bg-carnation-500' size='w-32 h-32' top='40%' left='-10%' delay={2} />
+
+    <Routes>
+      <Route 
+        path="/" 
+        element={
+          <ProtectedRoute>
+            <DashBoardPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/signup" 
+        element={
+          <RedirectAuthenticatedUser>
+            <SignUpPage />
+          </RedirectAuthenticatedUser>
+        } 
+      />
+      <Route 
+        path="/login" 
+        element={
+          <RedirectAuthenticatedUser>
+            <LoginPage />
+          </RedirectAuthenticatedUser>
+        } 
+      />
+      <Route 
+        path="/verify-email" 
+        element={<EmailVerificationPage />} 
+      />
+      <Route path='/forgot-password' element={
+        <RedirectAuthenticatedUser>
+          <ForgotPasswordPage />
+        </RedirectAuthenticatedUser>
+      } />
+      <Route
+      path="/reset-password/:token"
+      element = {
+        <RedirectAuthenticatedUser>
+          <ResetPasswordPage />
+        </RedirectAuthenticatedUser>
+          
+        
+      }
+      />
+
+    </Routes>
+
+    <Toaster />
+  </div>
+);
+
 }
-
-export default App
+export default App;
